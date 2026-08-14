@@ -12,7 +12,7 @@ function App() {
   const [password, setPassword] = useState("");
 
   const [expenses, setExpenses] = useState([]);
-
+  const [transactionType, setTransactionType] = useState("expense");
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Food");
@@ -175,13 +175,14 @@ function App() {
     const { error } = await supabase
       .from("expenses")
       .insert({
-        user_id: user.id,
-        title: title,
-        amount: Number(amount),
-        category: category,
-        expense_date: expenseDate || null,
-        description: description,
-      });
+  user_id: user.id,
+  title,
+  amount: Number(amount),
+  transaction_type: transactionType,
+  category,
+  expense_date: expenseDate || null,
+  description,
+});
 
     if (error) {
       setMessage(error.message);
@@ -195,7 +196,7 @@ function App() {
     setDescription("");
 
     setMessage("Expense added successfully.");
-
+    setTransactionType("expense");
     loadExpenses(user.id);
   }
 
@@ -221,10 +222,15 @@ function App() {
   // TOTAL
   // --------------------------------
 
-  const totalExpense = expenses.reduce(
-    (total, expense) => total + Number(expense.amount),
-    0
-  );
+ const totalIncome = expenses
+    .filter(item => item.transaction_type === "income")
+    .reduce((sum, item) => sum + Number(item.amount), 0);
+
+const totalExpense = expenses
+    .filter(item => item.transaction_type === "expense")
+    .reduce((sum, item) => sum + Number(item.amount), 0);
+
+const walletBalance = totalIncome - totalExpense;
 
   // --------------------------------
   // LOGIN / SIGNUP PAGE
@@ -265,6 +271,7 @@ function App() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          
 
           {mode === "login" ? (
             <button
@@ -343,17 +350,31 @@ function App() {
 
       <div className="summary">
 
-        <div className="summary-card">
-          <h3>Total Expenses</h3>
-          <h2>₹{totalExpense.toFixed(2)}</h2>
-        </div>
+    <div className="summary-card">
+        <h3>Wallet Balance</h3>
+        <h2>₹{walletBalance.toFixed(2)}</h2>
+    </div>
 
-        <div className="summary-card">
-          <h3>Number of Expenses</h3>
-          <h2>{expenses.length}</h2>
-        </div>
+    <div className="summary-card">
+        <h3>Total Income</h3>
+        <h2 style={{color:"green"}}>
+            ₹{totalIncome.toFixed(2)}
+        </h2>
+    </div>
 
-      </div>
+    <div className="summary-card">
+        <h3>Total Expense</h3>
+        <h2 style={{color:"red"}}>
+            ₹{totalExpense.toFixed(2)}
+        </h2>
+    </div>
+
+    <div className="summary-card">
+        <h3>Transactions</h3>
+        <h2>{expenses.length}</h2>
+    </div>
+
+</div>
 
       <div className="content">
 
@@ -404,8 +425,15 @@ function App() {
             />
 
             <button type="submit">
-              Add Expense
+              Add Transaction
             </button>
+            <select
+    value={transactionType}
+    onChange={(e) => setTransactionType(e.target.value)}
+>
+    <option value="expense">Expense</option>
+    <option value="income">Income</option>
+</select>
 
           </form>
 
@@ -419,7 +447,7 @@ function App() {
 
         <section className="expenses-card">
 
-          <h2>My Expenses</h2>
+          <h2>Add Transaction</h2>
 
           {expenses.length === 0 ? (
             <p>No expenses yet.</p>
@@ -434,6 +462,9 @@ function App() {
 
                   <div>
                     <h3>{expense.title}</h3>
+                    <p>
+        Category: {expense.category}
+    </p>
 
                     <p>
                       Category: {expense.category}
@@ -447,14 +478,23 @@ function App() {
                       <p>
                         {expense.description}
                       </p>
+                      
                     )}
                   </div>
 
                   <div className="expense-right">
 
-                    <strong>
-                      ₹{Number(expense.amount).toFixed(2)}
-                    </strong>
+                    <strong
+    style={{
+        color:
+            expense.transaction_type === "income"
+                ? "green"
+                : "red"
+    }}
+>
+    {expense.transaction_type === "income" ? "+" : "-"}
+    ₹{Number(expense.amount).toFixed(2)}
+</strong>
 
                     <button
                       className="delete-button"
