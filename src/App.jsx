@@ -149,6 +149,7 @@ function App() {
       .order("created_at", {
         ascending: false,
       });
+      
 
     if (error) {
       console.log(error);
@@ -171,6 +172,8 @@ function App() {
     }
 
     const user = session.user;
+    const beep = new Audio("sounds/Notification.mp3");
+  beep.play();
 
     const { error } = await supabase
       .from("expenses")
@@ -209,6 +212,8 @@ function App() {
       .from("expenses")
       .delete()
       .eq("id", id);
+      const beep = new Audio("sounds/Notification.mp3");
+  beep.play();
 
     if (error) {
       setMessage(error.message);
